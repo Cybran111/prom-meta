@@ -40,9 +40,6 @@ class Field(metaclass=BaseField):
 
 
 class BaseModel(type):
-    __tablename__ = None
-    __id_field = None
-    __fields = None
 
     @staticmethod
     def __serial():
