@@ -10,17 +10,13 @@ db = [
 ]
 
 
-class BaseField(type):
-    _use_type = None
-
-
-class Field(metaclass=BaseField):
+class Field:
     _value = None
     _field_name = None
     _model = None
 
-    def __init__(self, field_name):
-        self._field_name = field_name
+    def _set_field_name(self, name):
+        self._field_name = name
 
     def __eq__(self, other):
         return '"{}"."{}" = \'{}\''\
@@ -35,8 +31,7 @@ class Field(metaclass=BaseField):
         return instance._entry[self._field_name]
 
     def __set__(self, instance, value):
-        self._value = self._use_type(value)
-        instance._entry[self._field_name] = self._use_type(value)
+        instance._entry[self._field_name] = value
 
 
 class BaseModel(type):
@@ -51,6 +46,10 @@ class BaseModel(type):
     def __new__(mcs, name, bases, attrs):
         if "id" in attrs:
             raise Exception("You cannot use this name for field")
+
+        fields = list(filter(lambda item: isinstance(item[1], Field),
+                             attrs.items()))
+        list(map(lambda item: item[1]._set_field_name(item[0]), fields))
 
         attrs['_id_serial'] = mcs.__serial()
 
@@ -98,8 +97,8 @@ class IntegerField(Field):
 
 class User(Entity):
     __tablename__ = 'user'
-    name = TextField("name")
-    rate = IntegerField("rate")
+    name = TextField()
+    rate = IntegerField()
 
 user = User(name="baka", rate=5)
 
@@ -111,6 +110,10 @@ u = User.get(2)                   # u должен присвоиться объ
 
 assert u.name == "Bruce Lee"    # вернет строку 'Bruce Lee'
 #
+
+u.name = "Statham"
+assert u.name == "Statham"
+
 u2 = User(name='Arni', rate=4)  # В "базу" должен записаться новый dict
 #                                 # {'id': 4, 'name': 'Arni', 'rate': 4},
 #                                 # переменной u2 должен присвоиться объект
